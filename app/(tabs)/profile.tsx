@@ -67,6 +67,19 @@ export default function ProfileScreen() {
     ]);
   }
 
+  async function handleRerunOnboarding() {
+    Alert.alert('Redo Setup', 'This will run the setup wizard again. Your existing data is kept.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Continue',
+        onPress: async () => {
+          await supabase.auth.updateUser({ data: { onboarded: false } });
+          router.replace('/onboarding');
+        },
+      },
+    ]);
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView contentContainerStyle={{ padding: Spacing.md, paddingBottom: Spacing['2xl'] }}>
@@ -148,6 +161,22 @@ export default function ProfileScreen() {
           Account
         </Text>
         <Card padding={0} style={{ marginBottom: Spacing.md }}>
+          <Pressable
+            onPress={handleRerunOnboarding}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: Spacing.md,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Text style={{ fontSize: 22, marginRight: Spacing.sm }}>🔄</Text>
+            <Text style={{ color: Colors.white, fontSize: FontSize.base, fontWeight: '600', flex: 1 }}>
+              Redo Setup Wizard
+            </Text>
+            <Text style={{ color: Colors.muted, fontSize: FontSize.md }}>›</Text>
+          </Pressable>
+          <View style={{ height: 1, backgroundColor: Colors.border, marginHorizontal: Spacing.md }} />
           <Pressable
             onPress={handleSignOut}
             style={({ pressed }) => ({

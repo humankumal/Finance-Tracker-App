@@ -27,11 +27,15 @@ export default function SignupScreen() {
       return;
     }
     setLoading(true);
-    const { error: err } = await supabase.auth.signUp({ email, password });
+    const { data, error: err } = await supabase.auth.signUp({ email, password });
     setLoading(false);
     if (err) {
       setError(err.message);
+    } else if (data.session) {
+      // Email confirmation disabled — go straight to onboarding
+      router.replace('/onboarding');
     } else {
+      // Email confirmation required
       setSuccess(true);
     }
   }
@@ -41,7 +45,7 @@ export default function SignupScreen() {
       <View style={{ flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg }}>
         <Text style={{ fontSize: 48, marginBottom: Spacing.md }}>✅</Text>
         <Text style={{ color: Colors.white, fontSize: FontSize.lg, fontWeight: '700', textAlign: 'center' }}>
-          Check your email to confirm your account.
+          Check your email to confirm your account, then sign in.
         </Text>
         <Button
           label="Back to Login"

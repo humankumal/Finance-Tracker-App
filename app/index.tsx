@@ -4,7 +4,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { Colors } from '../constants/theme';
 
 export default function Index() {
-  const { session, isLoading } = useAuthStore();
+  const { session, user, isLoading } = useAuthStore();
 
   if (isLoading) {
     return (
@@ -14,5 +14,11 @@ export default function Index() {
     );
   }
 
-  return session ? <Redirect href="/(tabs)" /> : <Redirect href="/(auth)/login" />;
+  if (!session) {
+    return <Redirect href="/(auth)/login" />;
+  }
+
+  // New users who haven't completed onboarding go to the wizard
+  const isOnboarded = user?.user_metadata?.onboarded === true;
+  return isOnboarded ? <Redirect href="/(tabs)" /> : <Redirect href="/onboarding" />;
 }
