@@ -31,3 +31,20 @@ export function useAddAccount() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['accounts'] }),
   });
 }
+
+export function useUpdateAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<Account> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('accounts')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['accounts'] }),
+  });
+}

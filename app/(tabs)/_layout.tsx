@@ -38,6 +38,10 @@ export default function TabLayout() {
         name="goals"
         options={{ title: 'Goals', tabBarIcon: ({ color }) => <TabIcon emoji="🚀" color={color} /> }}
       />
+      <Tabs.Screen
+        name="profile"
+        options={{ title: 'Manage', tabBarIcon: ({ color }) => <TabIcon emoji="⚙️" color={color} /> }}
+      />
     </Tabs>
   );
 }
