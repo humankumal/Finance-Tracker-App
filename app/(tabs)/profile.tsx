@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuthStore } from '../../lib/store/authStore';
+import { useUIStore } from '../../lib/store/uiStore';
 import { useCategories } from '../../lib/hooks/useCategories';
 import { useAccounts } from '../../lib/hooks/useAccounts';
 import { useSavingsGoals } from '../../lib/hooks/useSavingsGoals';
+import { useTransactions } from '../../lib/hooks/useTransactions';
 import { supabase } from '../../lib/supabase';
+import { exportTransactionsCsv, shareMonthlyReport } from '../../lib/export';
 import { Colors, FontSize, Spacing, Radius } from '../../constants/theme';
 import { Card } from '../../components/ui/Card';
 
@@ -47,9 +50,13 @@ function ManageRow({ emoji, label, subtitle, onPress, badge }: ManageRowProps) {
 
 export default function ProfileScreen() {
   const { user } = useAuthStore();
+  const { selectedMonth } = useUIStore();
   const userId = user?.id ?? '';
 
+  const [exporting, setExporting] = useState(false);
+
   const { data: categories = [] } = useCategories(userId);
+  const { data: transactions = [] } = useTransactions(userId, selectedMonth);
   const { data: accounts = [] } = useAccounts(userId);
   const { data: goals = [] } = useSavingsGoals(userId);
 
@@ -154,6 +161,44 @@ export default function ProfileScreen() {
               <Text style={{ color: Colors.muted, fontSize: FontSize.xs }}>{label}</Text>
             </View>
           ))}
+        </Card>
+
+        {/* Export section */}
+        <Text style={{ color: Colors.muted, fontSize: FontSize.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: Spacing.xs }}>
+          Export
+        </Text>
+        <Card padding={0} style={{ marginBottom: Spacing.md }}>
+          <ManageRow
+            emoji="📄"
+            label="Export CSV"
+            subtitle={`Transactions for ${selectedMonth}`}
+            onPress={async () => {
+              try {
+                setExporting(true);
+                await exportTransactionsCsv(transactions, selectedMonth);
+              } catch (e: any) {
+                Alert.alert('Export failed', e.message);
+              } finally {
+                setExporting(false);
+              }
+            }}
+          />
+          <View style={{ height: 1, backgroundColor: Colors.border, marginHorizontal: Spacing.md }} />
+          <ManageRow
+            emoji="📊"
+            label="Share Monthly Report"
+            subtitle={`50/30/20 summary for ${selectedMonth}`}
+            onPress={async () => {
+              try {
+                setExporting(true);
+                await shareMonthlyReport(transactions, categories, selectedMonth);
+              } catch (e: any) {
+                Alert.alert('Share failed', e.message);
+              } finally {
+                setExporting(false);
+              }
+            }}
+          />
         </Card>
 
         {/* Account section */}

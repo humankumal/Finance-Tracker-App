@@ -15,6 +15,7 @@ import { useTransactions, useDeleteTransaction } from '../../lib/hooks/useTransa
 import { detectAnomalies } from '../../lib/math/trend-analysis';
 import { Colors, FontSize, Spacing } from '../../constants/theme';
 import { TransactionRow } from '../../components/finance/TransactionRow';
+import { MonthSelector } from '../../components/ui/MonthSelector';
 import type { Transaction } from '../../types';
 
 function groupByDate(transactions: Transaction[]): { date: string; data: Transaction[] }[] {
@@ -74,9 +75,10 @@ export default function TransactionsScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
       {/* Header */}
       <View style={{ padding: Spacing.md, paddingBottom: 0 }}>
-        <Text style={{ color: Colors.white, fontSize: FontSize.lg, fontWeight: '700', marginBottom: Spacing.sm }}>
-          Transactions
-        </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.sm }}>
+          <Text style={{ color: Colors.white, fontSize: FontSize.lg, fontWeight: '800' }}>Transactions</Text>
+          <MonthSelector />
+        </View>
         <TextInput
           value={search}
           onChangeText={setSearch}

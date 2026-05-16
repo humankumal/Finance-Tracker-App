@@ -18,6 +18,7 @@ import { Card } from '../../components/ui/Card';
 import { HealthScoreRing } from '../../components/finance/HealthScoreRing';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { TransactionRow } from '../../components/finance/TransactionRow';
+import { MonthSelector } from '../../components/ui/MonthSelector';
 
 export default function DashboardScreen() {
   const { user } = useAuthStore();
@@ -38,11 +39,6 @@ export default function DashboardScreen() {
   const net = income - expenses;
   const recent = transactions.slice(0, 5);
 
-  const monthLabel = new Date(`${selectedMonth}-01`).toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  });
-
   if (txLoading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
@@ -57,11 +53,11 @@ export default function DashboardScreen() {
 
         {/* Header */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.lg }}>
-          <View>
-            <Text style={{ color: Colors.muted, fontSize: FontSize.sm }}>Overview</Text>
-            <Text style={{ color: Colors.white, fontSize: FontSize.lg, fontWeight: '700' }}>{monthLabel}</Text>
-          </View>
-          <Text style={{ fontSize: 28 }}>💹</Text>
+          <Text style={{ color: Colors.white, fontSize: FontSize.lg, fontWeight: '800' }}>Dashboard</Text>
+          <Text style={{ fontSize: 24 }}>💹</Text>
+        </View>
+        <View style={{ alignItems: 'center', marginBottom: Spacing.md }}>
+          <MonthSelector />
         </View>
 
         {/* Net Balance Card */}

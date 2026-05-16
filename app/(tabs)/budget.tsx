@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../lib/store/authStore';
@@ -9,6 +9,8 @@ import { calculateBudgetSummaries, totalVariance } from '../../lib/math/budget-v
 import { Colors, FontSize, Spacing } from '../../constants/theme';
 import { Card } from '../../components/ui/Card';
 import { BudgetCard } from '../../components/finance/BudgetCard';
+import { MonthSelector } from '../../components/ui/MonthSelector';
+import { checkBudgetAlerts } from '../../lib/notifications';
 
 function getDaysInMonth(yearMonth: string) {
   const [year, month] = yearMonth.split('-').map(Number);
@@ -43,10 +45,13 @@ export default function BudgetScreen() {
     return { summaries: s, totals: t };
   }, [categories, transactions, selectedMonth]);
 
-  const monthLabel = new Date(`${selectedMonth}-01`).toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  });
+  // Fire budget alerts when viewing the current month with fresh data
+  useEffect(() => {
+    const isCurrentMonth = selectedMonth === new Date().toISOString().slice(0, 7);
+    if (isCurrentMonth && summaries.length > 0) {
+      checkBudgetAlerts(summaries);
+    }
+  }, [summaries, selectedMonth]);
 
   if (txLoading || catLoading) {
     return (
@@ -60,12 +65,10 @@ export default function BudgetScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView contentContainerStyle={{ padding: Spacing.md, paddingBottom: Spacing['2xl'] }}>
 
-        <Text style={{ color: Colors.white, fontSize: FontSize.lg, fontWeight: '700', marginBottom: Spacing.sm }}>
-          Budget
-        </Text>
-        <Text style={{ color: Colors.muted, fontSize: FontSize.sm, marginBottom: Spacing.md }}>
-          {monthLabel}
-        </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md }}>
+          <Text style={{ color: Colors.white, fontSize: FontSize.lg, fontWeight: '800' }}>Budget</Text>
+          <MonthSelector />
+        </View>
 
         {/* Total summary card */}
         <Card style={{ marginBottom: Spacing.md, flexDirection: 'row', justifyContent: 'space-between' }}>
