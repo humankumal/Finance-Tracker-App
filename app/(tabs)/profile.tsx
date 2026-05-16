@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Pressable, ScrollView, Alert, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuthStore } from '../../lib/store/authStore';
@@ -10,6 +10,7 @@ import { useSavingsGoals } from '../../lib/hooks/useSavingsGoals';
 import { useTransactions } from '../../lib/hooks/useTransactions';
 import { supabase } from '../../lib/supabase';
 import { exportTransactionsCsv, shareMonthlyReport } from '../../lib/export';
+import { isBiometricAvailable, getBiometricEnabled, setBiometricEnabled } from '../../lib/biometric';
 import { Colors, FontSize, Spacing, Radius } from '../../constants/theme';
 import { Card } from '../../components/ui/Card';
 
@@ -54,11 +55,25 @@ export default function ProfileScreen() {
   const userId = user?.id ?? '';
 
   const [exporting, setExporting] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricEnabled, setBiometricEnabledState] = useState(false);
 
   const { data: categories = [] } = useCategories(userId);
   const { data: transactions = [] } = useTransactions(userId, selectedMonth);
   const { data: accounts = [] } = useAccounts(userId);
   const { data: goals = [] } = useSavingsGoals(userId);
+
+  useEffect(() => {
+    isBiometricAvailable().then((avail) => {
+      setBiometricAvailable(avail);
+      if (avail) getBiometricEnabled().then(setBiometricEnabledState);
+    });
+  }, []);
+
+  async function handleBiometricToggle(value: boolean) {
+    await setBiometricEnabled(value);
+    setBiometricEnabledState(value);
+  }
 
   async function handleSignOut() {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -144,6 +159,13 @@ export default function ProfileScreen() {
             badge={goals.length}
             onPress={() => router.push('/(tabs)/goals')}
           />
+          <View style={{ height: 1, backgroundColor: Colors.border, marginHorizontal: Spacing.md }} />
+          <ManageRow
+            emoji="🔄"
+            label="Recurring Transactions"
+            subtitle="Rent, salary, subscriptions — auto-post"
+            onPress={() => router.push('/recurring')}
+          />
         </Card>
 
         {/* Stats section */}
@@ -200,6 +222,30 @@ export default function ProfileScreen() {
             }}
           />
         </Card>
+
+        {/* Security section */}
+        {biometricAvailable && (
+          <>
+            <Text style={{ color: Colors.muted, fontSize: FontSize.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: Spacing.xs }}>
+              Security
+            </Text>
+            <Card padding={0} style={{ marginBottom: Spacing.md }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm + 2 }}>
+                <Text style={{ fontSize: 22, marginRight: Spacing.sm }}>🔒</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: Colors.white, fontSize: FontSize.base, fontWeight: '600' }}>Biometric Lock</Text>
+                  <Text style={{ color: Colors.muted, fontSize: FontSize.xs }}>Require Face ID / fingerprint on resume</Text>
+                </View>
+                <Switch
+                  value={biometricEnabled}
+                  onValueChange={handleBiometricToggle}
+                  trackColor={{ false: Colors.border, true: Colors.accent }}
+                  thumbColor={Colors.white}
+                />
+              </View>
+            </Card>
+          </>
+        )}
 
         {/* Account section */}
         <Text style={{ color: Colors.muted, fontSize: FontSize.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: Spacing.xs }}>

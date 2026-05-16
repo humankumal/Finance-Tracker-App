@@ -1,6 +1,7 @@
 export type AccountType = 'checking' | 'savings' | 'credit' | 'cash';
 export type TransactionType = 'income' | 'expense';
 export type BudgetBucket = 'needs' | 'wants' | 'savings' | 'income';
+export type RecurringFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export interface Account {
   id: string;
@@ -32,6 +33,23 @@ export interface Transaction {
   type: TransactionType;
   description?: string;
   date: string;
+  created_at: string;
+  category?: Category;
+  account?: Account;
+}
+
+export interface RecurringTransaction {
+  id: string;
+  user_id: string;
+  account_id?: string;
+  category_id?: string;
+  amount: number;
+  type: TransactionType;
+  description?: string;
+  frequency: RecurringFrequency;
+  next_due_date: string;
+  last_run_date?: string;
+  is_active: boolean;
   created_at: string;
   category?: Category;
   account?: Account;
