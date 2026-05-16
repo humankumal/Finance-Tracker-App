@@ -13,6 +13,7 @@ import { useAuthStore } from '../../lib/store/authStore';
 import { useCategories } from '../../lib/hooks/useCategories';
 import { useAccounts } from '../../lib/hooks/useAccounts';
 import { useAddTransaction } from '../../lib/hooks/useTransactions';
+import { haptic } from '../../lib/haptics';
 import type { TransactionType } from '../../types';
 import { Colors, FontSize, Spacing } from '../../constants/theme';
 import { Input } from '../../components/ui/Input';
@@ -38,19 +39,25 @@ export default function AddTransactionScreen() {
     setError('');
     const parsed = parseFloat(amount);
     if (!parsed || parsed <= 0) {
+      haptic.error();
       setError('Enter a valid amount.');
       return;
     }
-    await addTransaction.mutateAsync({
-      user_id: userId,
-      type,
-      amount: parsed,
-      description,
-      date,
-      category_id: selectedCategory,
-      account_id: selectedAccount,
-    });
-    router.back();
+    try {
+      await addTransaction.mutateAsync({
+        user_id: userId,
+        type,
+        amount: parsed,
+        description,
+        date,
+        category_id: selectedCategory,
+        account_id: selectedAccount,
+      });
+      haptic.success();
+      router.back();
+    } catch {
+      haptic.error();
+    }
   }
 
   const relevantCategories = categories.filter(

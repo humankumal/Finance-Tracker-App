@@ -11,10 +11,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../lib/store/authStore';
 import { useAccounts, useAddAccount } from '../../lib/hooks/useAccounts';
 import { supabase } from '../../lib/supabase';
+import { haptic } from '../../lib/haptics';
 import type { Account, AccountType } from '../../types';
 import { Colors, FontSize, Spacing, Radius } from '../../constants/theme';
 import { Card } from '../../components/ui/Card';
@@ -115,9 +117,10 @@ export default function AccountsScreen() {
   const [error, setError] = useState('');
 
   function handleDelete(id: string) {
+    haptic.warning();
     Alert.alert('Delete Account', 'This will not delete associated transactions.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deleteAccount.mutate(id) },
+      { text: 'Delete', style: 'destructive', onPress: () => { haptic.heavy(); deleteAccount.mutate(id); } },
     ]);
   }
 
@@ -151,12 +154,22 @@ export default function AccountsScreen() {
       {/* Header */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: Spacing.md, paddingBottom: 0 }}>
         <Text style={{ color: Colors.white, fontSize: FontSize.lg, fontWeight: '700' }}>Accounts</Text>
-        <Pressable
-          onPress={() => setModalVisible(true)}
-          style={{ backgroundColor: Colors.accent, borderRadius: 20, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs }}
-        >
-          <Text style={{ color: Colors.white, fontSize: FontSize.sm, fontWeight: '700' }}>+ Add</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', gap: Spacing.sm }}>
+          {accounts.length >= 2 && (
+            <Pressable
+              onPress={() => { haptic.light(); router.push('/transfer'); }}
+              style={{ backgroundColor: Colors.surface, borderRadius: 20, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderWidth: 1, borderColor: Colors.border }}
+            >
+              <Text style={{ color: Colors.white, fontSize: FontSize.sm, fontWeight: '700' }}>⇄ Transfer</Text>
+            </Pressable>
+          )}
+          <Pressable
+            onPress={() => setModalVisible(true)}
+            style={{ backgroundColor: Colors.accent, borderRadius: 20, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs }}
+          >
+            <Text style={{ color: Colors.white, fontSize: FontSize.sm, fontWeight: '700' }}>+ Add</Text>
+          </Pressable>
+        </View>
       </View>
 
       {isLoading ? (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../lib/store/authStore';
@@ -17,6 +18,7 @@ import {
   monthsToGoal,
   requiredMonthlyContrib,
 } from '../../lib/math/compound-interest';
+import { haptic } from '../../lib/haptics';
 import type { SavingsGoal } from '../../types';
 import { Colors, FontSize, Spacing } from '../../constants/theme';
 import { Card } from '../../components/ui/Card';
@@ -106,8 +108,16 @@ export default function GoalsScreen() {
   const { user } = useAuthStore();
   const userId = user?.id ?? '';
 
-  const { data: goals = [], isLoading } = useSavingsGoals(userId);
+  const [refreshing, setRefreshing] = useState(false);
+  const { data: goals = [], isLoading, refetch } = useSavingsGoals(userId);
   const addGoal = useAddGoal();
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    haptic.light();
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [name, setName] = useState('');
@@ -126,33 +136,37 @@ export default function GoalsScreen() {
       monthly_contrib: parseFloat(monthly) || 0,
       interest_rate: (parseFloat(rate) || 5) / 100,
     });
+    haptic.success();
     setModalVisible(false);
     setName(''); setTarget(''); setCurrent('0'); setMonthly(''); setRate('5');
   }
 
-  if (isLoading) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
-        <ActivityIndicator color={Colors.accent} style={{ marginTop: Spacing['2xl'] }} />
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: Spacing.md, paddingBottom: Spacing['2xl'] }}>
-
+      <ScrollView
+        contentContainerStyle={{ padding: Spacing.md, paddingBottom: Spacing['2xl'] }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.accent}
+            colors={[Colors.accent]}
+          />
+        }
+      >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md }}>
           <Text style={{ color: Colors.white, fontSize: FontSize.lg, fontWeight: '700' }}>Savings Goals</Text>
           <Pressable
-            onPress={() => setModalVisible(true)}
+            onPress={() => { haptic.light(); setModalVisible(true); }}
             style={{ backgroundColor: Colors.accent, borderRadius: 20, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs }}
           >
             <Text style={{ color: Colors.white, fontSize: FontSize.sm, fontWeight: '700' }}>+ New Goal</Text>
           </Pressable>
         </View>
 
-        {goals.length === 0 ? (
+        {isLoading ? (
+          <ActivityIndicator color={Colors.accent} style={{ marginTop: Spacing['2xl'] }} />
+        ) : goals.length === 0 ? (
           <Card>
             <Text style={{ color: Colors.muted, textAlign: 'center', fontSize: FontSize.sm }}>
               No savings goals yet.{'\n'}Create one to see compound interest projections!

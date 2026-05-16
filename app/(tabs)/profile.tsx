@@ -11,6 +11,7 @@ import { useTransactions } from '../../lib/hooks/useTransactions';
 import { supabase } from '../../lib/supabase';
 import { exportTransactionsCsv, shareMonthlyReport } from '../../lib/export';
 import { isBiometricAvailable, getBiometricEnabled, setBiometricEnabled } from '../../lib/biometric';
+import { haptic } from '../../lib/haptics';
 import { Colors, FontSize, Spacing, Radius } from '../../constants/theme';
 import { Card } from '../../components/ui/Card';
 
@@ -76,12 +77,14 @@ export default function ProfileScreen() {
   }
 
   async function handleSignOut() {
+    haptic.warning();
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign Out',
         style: 'destructive',
         onPress: async () => {
+          haptic.heavy();
           await supabase.auth.signOut();
           router.replace('/(auth)/login');
         },
@@ -165,6 +168,13 @@ export default function ProfileScreen() {
             label="Recurring Transactions"
             subtitle="Rent, salary, subscriptions — auto-post"
             onPress={() => router.push('/recurring')}
+          />
+          <View style={{ height: 1, backgroundColor: Colors.border, marginHorizontal: Spacing.md }} />
+          <ManageRow
+            emoji="⇄"
+            label="Transfer Funds"
+            subtitle="Move money between your accounts"
+            onPress={() => router.push('/transfer')}
           />
         </Card>
 

@@ -11,6 +11,7 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -22,6 +23,7 @@ import { detectAnomalies } from '../../lib/math/trend-analysis';
 import { Colors, FontSize, Spacing, BucketColors } from '../../constants/theme';
 import { TransactionRow } from '../../components/finance/TransactionRow';
 import { MonthSelector } from '../../components/ui/MonthSelector';
+import { haptic } from '../../lib/haptics';
 import type { Transaction, TransactionType, BudgetBucket } from '../../types';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -97,9 +99,17 @@ export default function TransactionsScreen() {
   const [search, setSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const { data: transactions = [], isLoading } = useTransactions(userId, selectedMonth);
-  const { data: categories = [] } = useCategories(userId);
+  const { data: transactions = [], isLoading, refetch: refetchTx } = useTransactions(userId, selectedMonth);
+  const { data: categories = [], refetch: refetchCat } = useCategories(userId);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    haptic.light();
+    await Promise.all([refetchTx(), refetchCat()]);
+    setRefreshing(false);
+  }, [refetchTx, refetchCat]);
 
   const anomalyIds = useMemo(() => detectAnomalies(transactions), [transactions]);
 
@@ -434,6 +444,9 @@ export default function TransactionsScreen() {
         data={groups}
         keyExtractor={(item) => item.date}
         contentContainerStyle={{ paddingBottom: Spacing['2xl'] }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />
+        }
         renderItem={({ item: group }) => (
           <View>
             <Text style={{ color: Colors.muted, fontSize: FontSize.sm, fontWeight: '600', paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs }}>
@@ -464,7 +477,7 @@ export default function TransactionsScreen() {
 
       {/* FAB */}
       <Pressable
-        onPress={() => router.push('/transaction/add')}
+        onPress={() => { haptic.medium(); router.push('/transaction/add'); }}
         style={({ pressed }) => ({
           position: 'absolute',
           bottom: Spacing.xl,

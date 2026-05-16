@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useMemo, useState, useCallback } from 'react';
+import { View, Text, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../lib/store/authStore';
 import { useTransactions } from '../../lib/hooks/useTransactions';
 import { useCategories } from '../../lib/hooks/useCategories';
+import { haptic } from '../../lib/haptics';
 import { buildTrendPoints, detectAnomalies, linearRegression } from '../../lib/math/trend-analysis';
 import { sumByBucket, calculate503020 } from '../../lib/math/fifty-thirty-twenty';
 import { Colors, BucketColors, FontSize, Spacing } from '../../constants/theme';
@@ -16,9 +17,17 @@ import { DonutChart } from '../../components/charts/DonutChart';
 export default function InsightsScreen() {
   const { user } = useAuthStore();
   const userId = user?.id ?? '';
+  const [refreshing, setRefreshing] = useState(false);
 
-  const { data: allTransactions = [], isLoading } = useTransactions(userId);
-  const { data: categories = [] } = useCategories(userId);
+  const { data: allTransactions = [], isLoading, refetch: refetchTx } = useTransactions(userId);
+  const { data: categories = [], refetch: refetchCat } = useCategories(userId);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    haptic.light();
+    await Promise.all([refetchTx(), refetchCat()]);
+    setRefreshing(false);
+  }, [refetchTx, refetchCat]);
 
   const { trendPoints, regression, anomalyIds, health, buckets } = useMemo(() => {
     const trend = buildTrendPoints(allTransactions, 3, 3);
@@ -60,7 +69,12 @@ export default function InsightsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: Spacing.md, paddingBottom: Spacing['2xl'] }}>
+      <ScrollView
+        contentContainerStyle={{ padding: Spacing.md, paddingBottom: Spacing['2xl'] }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />
+        }
+      >
 
         <Text style={{ color: Colors.white, fontSize: FontSize.lg, fontWeight: '700', marginBottom: Spacing.md }}>
           Insights
